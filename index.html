@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>La Séance</title>
+<meta name="theme-color" content="#0B0E14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#0B0E14; --card:#161B26; --card2:#1E2534; --line:#1B2231;
+    --txt:#F2F5F9; --muted:#8A97AC; --dim:#5B6478;
+    --a:#D93B5C; --b:#22B187; --f:#E8A33D;
+  }
+  body{
+    background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh;min-height:100dvh;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overscroll-behavior:none;
+  }
+  #app{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+  .pad{padding:24px 20px}
+  .kicker{font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--dim)}
+  h1{font-size:38px;font-weight:900;letter-spacing:-.02em;line-height:1}
+  h2{font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1}
+  p.sub{color:var(--muted);font-size:14px;margin-top:8px;line-height:1.5}
+  .num{font-variant-numeric:tabular-nums;font-weight:900}
+
+  button,a.btn{font-family:inherit;border:0;cursor:pointer;display:flex;align-items:center;
+    justify-content:center;gap:8px;text-decoration:none}
+  .primary{width:100%;background:var(--a);color:#fff;font-weight:700;font-size:17px;
+    padding:19px;border-radius:18px}
+  .ghost{width:100%;background:none;color:var(--muted);font-size:14px;padding:14px;border-radius:14px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .tour{padding:16px 0;border-radius:14px;background:var(--card);color:var(--muted);
+    font-size:20px;font-weight:700}
+  .tour.on{background:var(--a);color:#fff}
+  input{width:100%;background:var(--card);border:0;border-radius:14px;padding:14px;
+    color:var(--txt);font-size:14px;font-family:inherit;outline:0}
+  input::placeholder{color:#4A5468}
+  input:focus{box-shadow:0 0 0 2px var(--a)}
+  .field{margin-bottom:24px}
+  .lbl{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+  .hint{font-size:12px;color:var(--dim);margin-top:8px;line-height:1.5}
+
+  .row{background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px}
+  .row .top{display:flex;align-items:center;justify-content:space-between}
+  .step{width:34px;height:34px;border-radius:10px;background:#242C3D;color:#CBD5E1;
+    font-size:20px;font-weight:700}
+  .val{width:56px;text-align:center;font-variant-numeric:tabular-nums;font-size:14px}
+  .mini{width:100%;background:#0F1420;border-radius:10px;padding:10px 12px;font-size:12px;margin-top:12px}
+
+  /* écran séance */
+  .top{padding:20px 20px 10px;display:flex;align-items:flex-start;justify-content:space-between}
+  .rail{display:flex;gap:3px;padding:0 20px 14px}
+  .rail i{flex:1;height:4px;border-radius:2px;background:var(--line);display:block}
+  .body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px}
+  .ringwrap{position:relative;display:flex;align-items:center;justify-content:center}
+  svg.ring{transform:rotate(-90deg)}
+  .ringtxt{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:0 40px}
+  .big{font-size:58px;line-height:1}
+  .mid{font-size:46px;line-height:1}
+  .exname{font-size:28px;font-weight:900;letter-spacing:-.02em;line-height:1.1;text-align:center;margin-top:22px}
+  .exsub{font-size:13px;color:var(--dim);text-align:center;margin-top:6px}
+  .exdet{font-size:13px;color:var(--muted);text-align:center;line-height:1.6;margin-top:14px;max-width:380px}
+  .demo{margin-top:18px;background:var(--card);color:#CBD5E1;font-size:14px;
+    padding:11px 18px;border-radius:14px}
+  .actions{padding:16px 20px calc(24px + env(safe-area-inset-bottom));display:flex;gap:12px}
+  .actions button{flex:1;padding:19px;border-radius:18px;font-weight:700;font-size:17px}
+  .dark{background:var(--card);color:#CBD5E1}
+  .light{background:#E2E8F0;color:#0B0E14}
+  .stop{width:100%;background:none;color:#4A5468;font-size:12px;padding:8px;
+    margin:0 20px calc(16px + env(safe-area-inset-bottom))}
+  .stop.armed{color:var(--a);font-weight:700}
+  .pill{padding:8px;border-radius:10px;background:var(--card);color:var(--muted);width:38px;height:38px}
+  .pulse{animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+  .switch{width:100%;display:flex;align-items:center;justify-content:space-between;
+    background:var(--card);border-radius:14px;padding:16px;margin-bottom:24px;color:var(--txt);font-size:14px}
+  .back{display:flex;align-items:center;gap:4px;background:none;color:var(--muted);font-size:14px;margin-bottom:20px;padding:0}
+  .done{text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ================= DONNÉES ================= */
+// Timestamps de la vidéo Eric Flag "La SEULE Vidéo Pour Commencer le Street Workout"
+const BLOC_A=[
+ {id:"tractions",nom:"Tractions",sub:"pronation ou supination",reps:"6 à 10 reps",
+  detail:"Bras tendus en bas, initie le mouvement avec les omoplates, menton au-dessus de la barre. Corps gainé, jambes serrées non croisées.",rest:75,ts:64},
+ {id:"dips",nom:"Dips",sub:"barres parallèles ou tréteaux",reps:"8 à 12 reps",
+  detail:"Épaules poussées vers le bas, coudes le long du corps. Descends au moins jusqu'à l'angle droit au coude.",rest:75,ts:192},
+ {id:"squat",nom:"Squat gobelet",sub:"un haltère contre la poitrine",reps:"12 à 15 reps",
+  detail:"Genoux dans l'axe des pieds, dos droit, talons au sol. Descends aussi bas que ta mobilité le permet.",rest:50,ts:272},
+ {id:"releves",nom:"Relevés de jambes",sub:"au sol ou suspendu",reps:"10 à 15 reps",
+  detail:"Bas du dos plaqué, bassin en rétroversion. Aucun balancier, descente contrôlée.",rest:50,ts:331}];
+
+const BLOC_B=[
+ {id:"australiennes",nom:"Tractions australiennes",sub:"barre basse, table ou anneaux",reps:"8 à 12 reps",
+  detail:"Omoplates vers l'arrière et vers le bas, va chercher le haut des pecs avec la barre. Corps droit et gainé.",rest:50,ts:374},
+ {id:"pompes",nom:"Pompes",sub:"classiques ou pieds surélevés",reps:"10 à 15 reps",
+  detail:"Coudes le long du corps, pecs qui frôlent le sol, épaules poussées vers l'avant en position haute.",rest:50,ts:412},
+ {id:"fentes",nom:"Fentes bulgares",sub:"pied arrière sur une chaise",reps:"10 reps par jambe",
+  detail:"Commence par ton côté faible. Genou avant dans l'axe, buste droit. Charge aux haltères dès que 12 reps passent facile.",rest:60,custom:true},
+ {id:"gainage",nom:"Gainage planche",sub:"enchaîné avec le superman",timed:40,
+  detail:"Fessiers serrés, bassin en rétroversion, aucun creux lombaire. Enchaîne directement sur le superman sans repos.",rest:0,ts:534},
+ {id:"superman",nom:"Superman",sub:"juste après le gainage",timed:40,
+  detail:"Décolle bras et jambes, regard vers le sol. Travaille toute la chaîne postérieure.",rest:50,ts:534}];
+
+const FIN_COMMUN=[
+ {id:"elevations",nom:"Élévations latérales",sub:"élastique ou haltères légers",reps:"15 à 20 reps",series:3,
+  detail:"Le plus important pour la silhouette en V. Tempo lent, monte à hauteur d'épaule, pas plus haut.",rest:45,custom:true},
+ {id:"facepulls",nom:"Face pulls",sub:"élastique",reps:"15 à 20 reps",series:3,
+  detail:"Assurance épaule : gros volume de tractions plus le service au tennis. Tire vers le front, coudes hauts.",rest:45,custom:true}];
+
+const FIN_IMPAIRE=[
+ {id:"militaire",nom:"Développé militaire",sub:"haltères, debout",reps:"10 à 12 reps",series:3,
+  detail:"La poussée verticale chargée que la callisthénie ne couvre pas. Fessiers et abdos gainés, aucune cambrure.",rest:90,custom:true},
+ {id:"triceps",nom:"Extensions triceps nuque",sub:"un haltère à deux mains",reps:"12 à 15 reps",series:3,
+  detail:"Cible la longue portion du triceps. Coudes serrés vers l'avant, seul l'avant-bras bouge.",rest:60,custom:true}];
+
+const FIN_PAIRE=[
+ {id:"curl",nom:"Curl marteau",sub:"haltères, prise neutre",reps:"10 à 12 reps",series:3,
+  detail:"Épaisseur du bras et de l'avant-bras. Coudes collés au buste, aucun élan des hanches.",rest:60,custom:true}];
+
+const REST_TOUR=120;
+const COL={A:"#D93B5C",B:"#22B187",F:"#E8A33D"};
+
+/* ================= ÉTAT ================= */
+const DEF={tours:2,videoUrl:"",customLinks:{},restOverrides:{},sound:true,sessionCount:1};
+let S=Object.assign({},DEF);
+try{const raw=localStorage.getItem("seance-config");if(raw)S=Object.assign(S,JSON.parse(raw));}catch(e){}
+const save=()=>{try{localStorage.setItem("seance-config",JSON.stringify(S));}catch(e){}};
+
+let screen="accueil", seq=[], idx=0, phase="work", running=true;
+let stepBase=0, stepAnchor=Date.now(), totBase=0, totAnchor=Date.now();
+let elapsed=0, total=0, stopArmed=false, tickId=null, wake=null;
+
+/* ================= OUTILS ================= */
+const fmt=s=>{const v=Math.max(0,Math.round(s));return Math.floor(v/60)+":"+String(v%60).padStart(2,"0");};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let actx=null;
+function beep(single){
+  if(navigator.vibrate)navigator.vibrate(single?[90]:[180,90,180]);
+  if(!S.sound)return;
+  try{
+    if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==="suspended")actx.resume();
+    const offs=single?[0]:[0,.18,.36];
+    offs.forEach((o,i)=>{
+      const osc=actx.createOscillator(),g=actx.createGain();
+      osc.type="sine";osc.frequency.value=(i===offs.length-1&&!single)?880:660;
+      g.gain.setValueAtTime(.0001,actx.currentTime+o);
+      g.gain.exponentialRampToValueAtTime(.4,actx.currentTime+o+.02);
+      g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+o+.15);
+      osc.connect(g);g.connect(actx.destination);
+      osc.start(actx.currentTime+o);osc.stop(actx.currentTime+o+.16);
+    });
+  }catch(e){}
+}
+
+function buildSequence(){
+  const steps=[], impaire=S.sessionCount%2===1;
+  const r=ex=>S.restOverrides[ex.id]!==undefined?S.restOverrides[ex.id]:ex.rest;
+  for(let t=1;t<=S.tours;t++){
+    [["A",BLOC_A],["B",BLOC_B]].forEach(([bloc,list],bi)=>{
+      list.forEach((ex,i)=>{
+        const dernier=i===list.length-1;
+        const finTout=dernier&&bi===1&&t===S.tours;
+        steps.push(Object.assign({},ex,{bloc:bloc,
+          position:"Tour "+t+"/"+S.tours+" · Bloc "+bloc+" · "+(i+1)+"/"+list.length,
+          rest:dernier&&!finTout?REST_TOUR:(finTout?90:r(ex)),
+          restLabel:dernier&&!finTout?"Repos entre les blocs":"Repos"}));
+      });
+    });
+  }
+  const fin=FIN_COMMUN.concat(impaire?FIN_IMPAIRE:FIN_PAIRE);
+  fin.forEach((ex,ei)=>{
+    for(let s=1;s<=ex.series;s++){
+      const last=ei===fin.length-1&&s===ex.series;
+      steps.push(Object.assign({},ex,{bloc:"F",
+        position:"Finition · Série "+s+"/"+ex.series,
+        rest:last?0:r(ex),restLabel:"Repos"}));
+    }
+  });
+  return steps;
+}
+
+const lienDemo=ex=>{
+  if(ex.custom)return S.customLinks[ex.id]||"";
+  if(!S.videoUrl)return "";
+  const base=S.videoUrl.split("&")[0].split("?t=")[0];
+  return base+(base.includes("?")?"&":"?")+"t="+ex.ts+"s";
+};
+
+const resetStep=()=>{stepBase=0;stepAnchor=Date.now();elapsed=0;};
+
+/* ================= BOUCLE ================= */
+function tick(){
+  if(screen!=="seance")return;
+  if(running){
+    elapsed=stepBase+(Date.now()-stepAnchor)/1000;
+    total=totBase+(Date.now()-totAnchor)/1000;
+  }
+  const step=seq[idx];if(!step)return;
+  const cible=phase==="rest"?step.rest:(step.timed||0);
+  if(running&&cible&&elapsed>=cible){
+    beep();
+    if(phase==="rest"||step.rest===0){next();}
+    else{phase="rest";resetStep();}
+    render();return;
+  }
+  paintClock();
+}
+function paintClock(){
+  const step=seq[idx];if(!step)return;
+  const cible=phase==="rest"?step.rest:(step.timed||0);
+  const restant=cible?Math.max(0,cible-elapsed):0;
+  const prog=cible?Math.min(1,elapsed/cible):0;
+  const t=document.getElementById("clock");
+  if(t)t.textContent=cible?fmt(restant):fmt(elapsed);
+  const tt=document.getElementById("tot");
+  if(tt)tt.textContent="Séance : "+fmt(total);
+  const c=document.getElementById("prog");
+  if(c){
+    const R=132,CIRC=2*Math.PI*R;
+    const p=phase==="rest"?1-prog:prog;
+    c.setAttribute("stroke-dashoffset",CIRC*(1-Math.min(1,Math.max(0,p))));
+  }
+}
+function next(){
+  if(idx+1>=seq.length){screen="fin";return;}
+  idx++;phase="work";resetStep();
+}
+
+/* ================= ÉCRANS ================= */
+function render(){
+  const app=document.getElementById("app");
+  if(screen==="accueil")app.innerHTML=viewAccueil();
+  else if(screen==="reglages")app.innerHTML=viewReglages();
+  else if(screen==="fin")app.innerHTML=viewFin();
+  else app.innerHTML=viewSeance();
+  bind();
+  if(screen==="seance")paintClock();
+}
+
+function viewAccueil(){
+  const impaire=S.sessionCount%2===1;
+  const nb=S.tours*(BLOC_A.length+BLOC_B.length)+(FIN_COMMUN.length+(impaire?2:1))*3;
+  return '<div class="pad">'
+   +'<div style="margin-bottom:32px">'
+   +'<div class="kicker" style="margin-bottom:4px">Séance '+S.sessionCount+'</div>'
+   +'<h1>LA SÉANCE</h1>'
+   +'<p class="sub">Blocs A et B en alternance, puis la finition.'
+   +(impaire?" Aujourd'hui : développé militaire et triceps.":" Aujourd'hui : curl marteau.")+'</p></div>'
+   +'<div class="field"><div class="lbl">Nombre de tours</div><div class="grid4">'
+   +[1,2,3,4].map(n=>'<button class="tour'+(S.tours===n?' on':'')+'" data-tour="'+n+'">'+n+'</button>').join("")
+   +'</div><p class="hint">'+S.tours+' tour'+(S.tours>1?'s':'')+' de A et '+S.tours+' de B, soit '+nb
+   +' passages. Première séance après une pause : reste à 1.</p></div>'
+   +'<div class="field"><div class="lbl">Vidéo de référence</div>'
+   +'<input id="vurl" type="url" inputmode="url" value="'+esc(S.videoUrl)+'" placeholder="Colle ici le lien de la vidéo Eric Flag">'
+   +'<p class="hint">Une seule fois : les repères temporels de chaque exercice sont déjà enregistrés et s\'ajouteront au lien.</p></div>'
+   +'<button class="primary" id="go">▶  Commencer</button>'
+   +'<button class="ghost" id="toReg">Temps de repos et liens vidéo</button>'
+   +'</div>';
+}
+
+function viewReglages(){
+  const tous=BLOC_A.concat(BLOC_B,FIN_COMMUN,FIN_IMPAIRE,FIN_PAIRE);
+  return '<div class="pad">'
+   +'<button class="back" id="back">‹  Retour</button>'
+   +'<h2 style="font-size:24px">Réglages</h2>'
+   +'<p class="sub" style="margin-bottom:24px">Repos par exercice et lien de démonstration quand la vidéo de référence ne le couvre pas.</p>'
+   +'<button class="switch" id="snd"><span>Signal sonore en fin de repos</span><span style="color:'
+   +(S.sound?'var(--b)':'var(--dim)')+';font-weight:700">'+(S.sound?'Activé':'Coupé')+'</span></button>'
+   +tous.map(ex=>{
+      const v=S.restOverrides[ex.id]!==undefined?S.restOverrides[ex.id]:ex.rest;
+      return '<div class="row"><div class="top"><span style="font-size:14px;font-weight:600">'+esc(ex.nom)+'</span>'
+       +'<span style="display:flex;align-items:center;gap:8px">'
+       +'<button class="step" data-minus="'+ex.id+'">−</button>'
+       +'<span class="val">'+v+'s</span>'
+       +'<button class="step" data-plus="'+ex.id+'">+</button></span></div>'
+       +(ex.custom?'<input class="mini" type="url" inputmode="url" data-link="'+ex.id+'" value="'
+         +esc(S.customLinks[ex.id]||"")+'" placeholder="Lien vidéo pour cet exercice">':'')
+       +'</div>';
+   }).join("")
+   +'</div>';
+}
+
+function viewFin(){
+  return '<div class="pad done">'
+   +'<div class="kicker" style="color:var(--b);margin-bottom:12px">Séance terminée</div>'
+   +'<div class="num" style="font-size:64px;margin-bottom:8px">'+fmt(total)+'</div>'
+   +'<p class="sub" style="margin-bottom:36px">'+seq.length+' passages, '+S.tours+' tour'
+   +(S.tours>1?'s':'')+' de chaque bloc.</p>'
+   +'<div style="background:var(--card);border-radius:18px;padding:20px;text-align:left;margin-bottom:28px">'
+   +'<div class="lbl">À faire maintenant</div>'
+   +'<p style="font-size:13px;color:#CBD5E1;line-height:1.6">Note tes reps dans le classeur pendant que tu as les chiffres en tête. '
+   +'La règle : à la prochaine séance, tu dois battre au moins un chiffre.</p></div>'
+   +'<button class="primary" id="home" style="background:var(--b);color:#0B0E14">Retour à l\'accueil</button>'
+   +'</div>';
+}
+
+function viewSeance(){
+  const step=seq[idx];
+  const col=COL[step.bloc];
+  const rest=phase==="rest";
+  const cible=rest?step.rest:(step.timed||0);
+  const lien=lienDemo(step);
+  const R=132,CIRC=2*Math.PI*R;
+
+  let inner;
+  if(rest){
+    inner='<div class="kicker" style="margin-bottom:6px">'+esc(step.restLabel)+'</div>'
+     +'<div class="num big" id="clock" style="color:#CBD5E1">'+fmt(cible)+'</div>'
+     +'<div style="font-size:12px;color:var(--dim);margin-top:10px">Ensuite : '
+     +esc(seq[idx+1]?seq[idx+1].nom:"fin de séance")+'</div>';
+  }else if(step.timed){
+    inner='<div class="kicker" style="color:'+col+';margin-bottom:6px">Tiens la position</div>'
+     +'<div class="num big" id="clock">'+fmt(step.timed)+'</div>';
+  }else{
+    inner='<div class="kicker" style="color:'+col+';margin-bottom:6px">En cours</div>'
+     +'<div class="num mid" id="clock">0:00</div>'
+     +'<div style="font-size:14px;color:var(--muted);margin-top:10px">'+esc(step.reps)+'</div>';
+  }
+
+  return '<div class="top"><div>'
+   +'<div class="kicker" style="font-size:10px">'+esc(step.position)+'</div>'
+   +'<div class="num" id="tot" style="font-size:12px;color:#4A5468;font-weight:400;margin-top:2px">Séance : 0:00</div></div>'
+   +'<button class="pill" id="pp">'+(running?"❙❙":"▶")+'</button></div>'
+   +'<div class="rail">'+seq.map((s,i)=>'<i style="background:'
+     +(i<idx?"#4A5568":(i===idx?col:"var(--line)"))+'"></i>').join("")+'</div>'
+   +'<div class="body"><div class="ringwrap">'
+   +'<svg class="ring" width="290" height="290" viewBox="0 0 300 300">'
+   +'<circle cx="150" cy="150" r="'+R+'" fill="none" stroke="#1B2231" stroke-width="14"/>'
+   +'<circle id="prog" cx="150" cy="150" r="'+R+'" fill="none" stroke="'+(rest?"#5B6478":col)
+   +'" stroke-width="14" stroke-linecap="round" stroke-dasharray="'+CIRC+'" stroke-dashoffset="'
+   +(rest?0:CIRC)+'" style="transition:stroke-dashoffset .3s linear"/></svg>'
+   +'<div class="ringtxt'+(running?'':' pulse')+'">'+inner+'</div></div>'
+   +'<div class="exname">'+esc(step.nom)+'</div>'
+   +'<div class="exsub">'+esc(step.sub)+'</div>'
+   +'<div class="exdet">'+esc(step.detail)+'</div>'
+   +(lien?'<a class="btn demo" href="'+esc(lien)+'" target="_blank" rel="noopener">▶  Voir la démonstration</a>'
+        :'<button class="ghost" id="toReg" style="width:auto;font-size:12px;color:#4A5468;margin-top:12px">+ Ajouter un lien pour cet exercice</button>')
+   +'</div>'
+   +'<div class="actions">'
+   +(rest
+     ?'<button class="dark" id="add30">+30 s</button><button class="light" id="skiprest">Passer le repos ›</button>'
+     :'<button class="dark" id="skip" style="flex:0 0 72px;font-size:20px">›</button>'
+      +'<button id="done" style="background:'+col+';color:#fff">✓  Série terminée</button>')
+   +'</div>'
+   +'<button class="stop'+(stopArmed?' armed':'')+'" id="stop">'
+   +(stopArmed?"Appuie encore pour confirmer l'arrêt":"Arrêter la séance")+'</button>';
+}
+
+/* ================= ÉVÉNEMENTS ================= */
+function bind(){
+  const on=(id,fn)=>{const e=document.getElementById(id);if(e)e.onclick=fn;};
+
+  document.querySelectorAll("[data-tour]").forEach(b=>b.onclick=()=>{
+    S.tours=+b.dataset.tour;save();render();});
+  const v=document.getElementById("vurl");
+  if(v)v.oninput=e=>{S.videoUrl=e.target.value;save();};
+
+  on("go",()=>{
+    beep(true); // débloque l'audio sur mobile (nécessite un geste utilisateur)
+    seq=buildSequence();idx=0;phase="work";running=true;
+    stepBase=0;stepAnchor=Date.now();elapsed=0;
+    totBase=0;totAnchor=Date.now();total=0;
+    screen="seance";requestWake();render();
+  });
+  on("toReg",()=>{screen="reglages";render();});
+  on("back",()=>{screen="accueil";render();});
+  on("snd",()=>{S.sound=!S.sound;save();render();});
+  on("home",()=>{S.sessionCount++;save();screen="accueil";render();});
+
+  document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.minus, all=BLOC_A.concat(BLOC_B,FIN_COMMUN,FIN_IMPAIRE,FIN_PAIRE);
+    const cur=S.restOverrides[id]!==undefined?S.restOverrides[id]:all.find(x=>x.id===id).rest;
+    S.restOverrides[id]=Math.max(0,cur-15);save();render();});
+  document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.plus, all=BLOC_A.concat(BLOC_B,FIN_COMMUN,FIN_IMPAIRE,FIN_PAIRE);
+    const cur=S.restOverrides[id]!==undefined?S.restOverrides[id]:all.find(x=>x.id===id).rest;
+    S.restOverrides[id]=cur+15;save();render();});
+  document.querySelectorAll("[data-link]").forEach(i=>i.oninput=e=>{
+    S.customLinks[i.dataset.link]=e.target.value;save();});
+
+  on("pp",()=>{
+    if(running){stepBase+=(Date.now()-stepAnchor)/1000;totBase+=(Date.now()-totAnchor)/1000;}
+    else{stepAnchor=Date.now();totAnchor=Date.now();}
+    running=!running;render();});
+  on("done",()=>{
+    const step=seq[idx];beep(true);
+    if(step.rest>0){phase="rest";resetStep();}else{next();}
+    render();});
+  on("skip",()=>{next();render();});
+  on("skiprest",()=>{next();render();});
+  on("add30",()=>{stepBase-=30;elapsed-=30;paintClock();});
+  on("stop",()=>{
+    if(stopArmed){stopArmed=false;releaseWake();screen="accueil";render();}
+    else{stopArmed=true;render();setTimeout(()=>{if(stopArmed){stopArmed=false;if(screen==="seance")render();}},3000);}
+  });
+}
+
+/* ================= ÉCRAN ALLUMÉ ================= */
+async function requestWake(){try{wake=await navigator.wakeLock.request("screen");}catch(e){}}
+function releaseWake(){try{if(wake)wake.release();wake=null;}catch(e){}}
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden){
+    if(screen==="seance"){requestWake();tick();}
+  }
+});
+
+/* ================= DÉMARRAGE ================= */
+tickId=setInterval(tick,200);
+render();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
