@@ -1,4 +1,4 @@
-const CACHE = "seance-v2";
+const CACHE = "seance-v3";
 const FILES = [
   "./", "./index.html", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"
