@@ -51,12 +51,12 @@
   .row{background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px}
   .row .top{display:flex;align-items:center;justify-content:space-between}
   .step{width:34px;height:34px;border-radius:10px;background:#242C3D;color:#CBD5E1;
-    font-size:20px;font-weight:700}
+    font-size:20px;font-weight:700;flex:0 0 auto}
   .val{width:56px;text-align:center;font-variant-numeric:tabular-nums;font-size:14px}
-  .mini{width:100%;background:#0F1420;border-radius:10px;padding:10px 12px;font-size:12px;margin-top:12px}
+  .mini{width:100%;background:#0F1420;border-radius:10px;padding:10px 12px;font-size:12px;margin-top:10px}
 
   /* écran séance */
-  .top{padding:20px 20px 10px;display:flex;align-items:flex-start;justify-content:space-between}
+  .top{padding:20px 20px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
   .rail{display:flex;gap:3px;padding:0 20px 14px}
   .rail i{flex:1;height:4px;border-radius:2px;background:var(--line);display:block}
   .body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px}
@@ -71,6 +71,9 @@
   .exdet{font-size:13px;color:var(--muted);text-align:center;line-height:1.6;margin-top:14px;max-width:380px}
   .demo{margin-top:18px;background:var(--card);color:#CBD5E1;font-size:14px;
     padding:11px 18px;border-radius:14px}
+  .repbar{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:24px}
+  .replbl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.12em}
+  .repval{width:44px;text-align:center;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
   .actions{padding:16px 20px calc(24px + env(safe-area-inset-bottom));display:flex;gap:12px}
   .actions button{flex:1;padding:19px;border-radius:18px;font-weight:700;font-size:17px}
   .dark{background:var(--card);color:#CBD5E1}
@@ -78,13 +81,33 @@
   .stop{width:100%;background:none;color:#4A5468;font-size:12px;padding:8px;
     margin:0 20px calc(16px + env(safe-area-inset-bottom))}
   .stop.armed{color:var(--a);font-weight:700}
-  .pill{padding:8px;border-radius:10px;background:var(--card);color:var(--muted);width:38px;height:38px}
+  .pill{padding:8px;border-radius:10px;background:var(--card);color:var(--muted);width:38px;height:38px;flex:0 0 auto}
+  .pill.armed{background:var(--a);color:#fff}
   .pulse{animation:pulse 1.6s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
   .switch{width:100%;display:flex;align-items:center;justify-content:space-between;
     background:var(--card);border-radius:14px;padding:16px;margin-bottom:24px;color:var(--txt);font-size:14px}
   .back{display:flex;align-items:center;gap:4px;background:none;color:var(--muted);font-size:14px;margin-bottom:20px;padding:0}
   .done{text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center}
+
+  /* carnet */
+  .tabbar{display:flex;gap:8px;margin-bottom:20px}
+  .tab{flex:1;padding:12px 0;border-radius:12px;background:var(--card);color:var(--muted);
+    font-size:14px;font-weight:700}
+  .tab.on{background:var(--a);color:#fff}
+  .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px}
+  .cardtop{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:10px}
+  .carddate{font-size:13px;font-weight:700}
+  .cardmeta{font-size:11px;color:var(--dim);margin-top:2px}
+  .delbtn{background:none;color:#4A5468;font-size:11px;padding:4px 8px;border-radius:8px;flex:0 0 auto}
+  .exrow{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:9px 0;border-top:1px solid var(--line)}
+  .exrowname{font-size:12px;color:var(--muted)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .chip{background:#0F1420;color:#CBD5E1;font-size:12px;font-variant-numeric:tabular-nums;
+    padding:5px 10px;border-radius:8px;font-weight:700}
+  .empty{text-align:center;color:var(--muted);font-size:13px;margin-top:40px;line-height:1.6}
+
 </style>
 </head>
 <body>
@@ -131,22 +154,68 @@ const FIN_PAIRE=[
  {id:"curl",nom:"Curl marteau",sub:"haltères, prise neutre",reps:"10 à 12 reps",series:3,
   detail:"Épaisseur du bras et de l'avant-bras. Coudes collés au buste, aucun élan des hanches.",rest:60,custom:true}];
 
+const ALL_EXOS = BLOC_A.concat(BLOC_B,FIN_COMMUN,FIN_IMPAIRE,FIN_PAIRE);
 const REST_TOUR=120;
 const COL={A:"#D93B5C",B:"#22B187",F:"#E8A33D"};
 
-/* ================= ÉTAT ================= */
+/* ================= ÉTAT : CONFIG ================= */
 const DEF={tours:2,videoUrl:"",customLinks:{},restOverrides:{},sound:true,sessionCount:1};
 let S=Object.assign({},DEF);
 try{const raw=localStorage.getItem("seance-config");if(raw)S=Object.assign(S,JSON.parse(raw));}catch(e){}
 const save=()=>{try{localStorage.setItem("seance-config",JSON.stringify(S));}catch(e){}};
 
+/* ================= ÉTAT : CARNET (journal + niveaux) ================= */
+let LOG={sessions:[]};
+try{const rawLog=localStorage.getItem("seance-journal");if(rawLog)LOG=JSON.parse(rawLog);}catch(e){}
+const saveLog=()=>{try{localStorage.setItem("seance-journal",JSON.stringify(LOG));}catch(e){}};
+
+let NIVEAUX={};
+try{const rawNiv=localStorage.getItem("seance-niveaux");if(rawNiv)NIVEAUX=JSON.parse(rawNiv);}catch(e){}
+const saveNiveaux=()=>{try{localStorage.setItem("seance-niveaux",JSON.stringify(NIVEAUX));}catch(e){}};
+
 let screen="accueil", seq=[], idx=0, phase="work", running=true;
 let stepBase=0, stepAnchor=Date.now(), totBase=0, totAnchor=Date.now();
 let elapsed=0, total=0, stopArmed=false, tickId=null, wake=null;
+let sessionLog={}, pendingReps=0, carnetTab="hist", deleteArmed=null;
 
 /* ================= OUTILS ================= */
 const fmt=s=>{const v=Math.max(0,Math.round(s));return Math.floor(v/60)+":"+String(v%60).padStart(2,"0");};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function formatDate(iso){
+  try{
+    const d=new Date(iso);
+    return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})
+      +" à "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+  }catch(e){return iso;}
+}
+
+function suggestReps(step){
+  const m=(step.reps||"").match(/\d+/g);
+  if(!m)return 10;
+  return Math.max.apply(null,m.map(Number));
+}
+function initPending(step){
+  if(!step||step.timed){pendingReps=null;return;}
+  const arr=sessionLog[step.id];
+  pendingReps=(arr&&arr.length)?arr[arr.length-1]:suggestReps(step);
+}
+
+function saveSessionToJournal(partial){
+  if(!Object.keys(sessionLog).length)return; // rien à enregistrer
+  const record={
+    id:Date.now(),
+    date:new Date().toISOString(),
+    sessionNumber:S.sessionCount,
+    tours:S.tours,
+    duration:Math.round(total),
+    partial:!!partial,
+    reps:JSON.parse(JSON.stringify(sessionLog))
+  };
+  LOG.sessions.push(record);
+  if(LOG.sessions.length>200)LOG.sessions=LOG.sessions.slice(-200);
+  saveLog();
+}
 
 let actx=null;
 function beep(single){
@@ -238,8 +307,13 @@ function paintClock(){
   }
 }
 function next(){
-  if(idx+1>=seq.length){screen="fin";return;}
+  if(idx+1>=seq.length){
+    saveSessionToJournal(false);
+    screen="fin";
+    return;
+  }
   idx++;phase="work";resetStep();
+  initPending(seq[idx]);
 }
 
 /* ================= ÉCRANS ================= */
@@ -247,6 +321,7 @@ function render(){
   const app=document.getElementById("app");
   if(screen==="accueil")app.innerHTML=viewAccueil();
   else if(screen==="reglages")app.innerHTML=viewReglages();
+  else if(screen==="carnet")app.innerHTML=viewCarnet();
   else if(screen==="fin")app.innerHTML=viewFin();
   else app.innerHTML=viewSeance();
   bind();
@@ -271,18 +346,18 @@ function viewAccueil(){
    +'<p class="hint">Une seule fois : les repères temporels de chaque exercice sont déjà enregistrés et s\'ajouteront au lien.</p></div>'
    +'<button class="primary" id="go">▶  Commencer</button>'
    +'<button class="ghost" id="toReg">Temps de repos et liens vidéo</button>'
+   +'<button class="ghost" id="toCarnet">📒  Mon carnet</button>'
    +'</div>';
 }
 
 function viewReglages(){
-  const tous=BLOC_A.concat(BLOC_B,FIN_COMMUN,FIN_IMPAIRE,FIN_PAIRE);
   return '<div class="pad">'
    +'<button class="back" id="back">‹  Retour</button>'
    +'<h2 style="font-size:24px">Réglages</h2>'
    +'<p class="sub" style="margin-bottom:24px">Repos par exercice et lien de démonstration quand la vidéo de référence ne le couvre pas.</p>'
    +'<button class="switch" id="snd"><span>Signal sonore en fin de repos</span><span style="color:'
    +(S.sound?'var(--b)':'var(--dim)')+';font-weight:700">'+(S.sound?'Activé':'Coupé')+'</span></button>'
-   +tous.map(ex=>{
+   +ALL_EXOS.map(ex=>{
       const v=S.restOverrides[ex.id]!==undefined?S.restOverrides[ex.id]:ex.rest;
       return '<div class="row"><div class="top"><span style="font-size:14px;font-weight:600">'+esc(ex.nom)+'</span>'
        +'<span style="display:flex;align-items:center;gap:8px">'
@@ -296,17 +371,77 @@ function viewReglages(){
    +'</div>';
 }
 
+function viewCarnet(){
+  let inner;
+  if(carnetTab==="niveaux"){
+    inner=ALL_EXOS.map(ex=>{
+      const n=NIVEAUX[ex.id]||{};
+      return '<div class="row">'
+       +'<div class="top" style="margin-bottom:8px"><span style="font-size:14px;font-weight:600">'+esc(ex.nom)+'</span>'
+       +(n.date?'<span style="font-size:11px;color:var(--dim)">'+esc(formatDate(n.date))+'</span>':'')
+       +'</div>'
+       +'<input class="mini" style="margin-top:0" data-niv-variante="'+ex.id+'" value="'
+       +esc(n.variante||"")+'" placeholder="Variante / charge actuelle">'
+       +'<input class="mini" data-niv-note="'+ex.id+'" value="'+esc(n.note||"")
+       +'" placeholder="Note (optionnel)">'
+       +'</div>';
+    }).join("");
+  }else{
+    const sessions=LOG.sessions;
+    if(!sessions.length){
+      inner='<p class="empty">Aucune séance enregistrée pour l\'instant.<br>Elle s\'ajoutera ici automatiquement à la fin de ta prochaine séance, et tu pourras aussi corriger un chiffre après coup.</p>';
+    }else{
+      const order=sessions.map((s,i)=>i).reverse();
+      inner=order.map(realIdx=>{
+        const s=sessions[realIdx];
+        const rows=Object.keys(s.reps).map(id=>{
+          const ex=ALL_EXOS.find(x=>x.id===id);
+          const nom=ex?ex.nom:id;
+          const chips=s.reps[id].map((v,si)=>
+            '<button class="chip" data-editset="'+realIdx+'|'+id+'|'+si+'">'+v+'</button>').join("");
+          return '<div class="exrow"><span class="exrowname">'+esc(nom)+'</span><span class="chips">'+chips+'</span></div>';
+        }).join("");
+        return '<div class="card">'
+         +'<div class="cardtop"><div><div class="carddate">'+esc(formatDate(s.date))
+         +(s.partial?' · interrompue':'')+'</div>'
+         +'<div class="cardmeta">Séance '+s.sessionNumber+' · '+s.tours+' tour'+(s.tours>1?'s':'')
+         +' · '+fmt(s.duration)+'</div></div>'
+         +'<button class="delbtn" data-delsession="'+realIdx+'">'+(deleteArmed===realIdx?'Confirmer ✕':'✕')+'</button>'
+         +'</div>'+rows+'</div>';
+      }).join("");
+    }
+  }
+  return '<div class="pad">'
+   +'<button class="back" id="back">‹  Retour</button>'
+   +'<h2 style="font-size:24px;margin-bottom:16px">Mon carnet</h2>'
+   +'<div class="tabbar">'
+   +'<button class="tab'+(carnetTab==="hist"?' on':'')+'" data-tab="hist">Historique</button>'
+   +'<button class="tab'+(carnetTab==="niveaux"?' on':'')+'" data-tab="niveaux">Mes niveaux</button>'
+   +'</div>'
+   +inner
+   +'</div>';
+}
+
 function viewFin(){
+  const exList=Object.keys(sessionLog);
+  const recap=exList.map(id=>{
+    const ex=ALL_EXOS.find(x=>x.id===id);
+    return '<div class="exrow"><span class="exrowname">'+esc(ex?ex.nom:id)+'</span>'
+     +'<span style="font-size:12px;color:#CBD5E1;font-variant-numeric:tabular-nums">'
+     +sessionLog[id].join(" · ")+'</span></div>';
+  }).join("");
   return '<div class="pad done">'
    +'<div class="kicker" style="color:var(--b);margin-bottom:12px">Séance terminée</div>'
    +'<div class="num" style="font-size:64px;margin-bottom:8px">'+fmt(total)+'</div>'
-   +'<p class="sub" style="margin-bottom:36px">'+seq.length+' passages, '+S.tours+' tour'
+   +'<p class="sub" style="margin-bottom:24px">'+seq.length+' passages, '+S.tours+' tour'
    +(S.tours>1?'s':'')+' de chaque bloc.</p>'
-   +'<div style="background:var(--card);border-radius:18px;padding:20px;text-align:left;margin-bottom:28px">'
-   +'<div class="lbl">À faire maintenant</div>'
-   +'<p style="font-size:13px;color:#CBD5E1;line-height:1.6">Note tes reps dans le classeur pendant que tu as les chiffres en tête. '
+   +(recap?'<div class="card" style="text-align:left;margin-bottom:16px">'+recap+'</div>':'')
+   +'<div style="background:var(--card);border-radius:18px;padding:20px;text-align:left;margin-bottom:24px">'
+   +'<div class="lbl">Enregistrée dans ton carnet</div>'
+   +'<p style="font-size:13px;color:#CBD5E1;line-height:1.6">Tu peux corriger un chiffre à tout moment depuis Mon carnet. '
    +'La règle : à la prochaine séance, tu dois battre au moins un chiffre.</p></div>'
-   +'<button class="primary" id="home" style="background:var(--b);color:#0B0E14">Retour à l\'accueil</button>'
+   +'<button class="primary" id="home" style="background:var(--b);color:#0B0E14;margin-bottom:12px">Retour à l\'accueil</button>'
+   +'<button class="ghost" id="toCarnet">📒  Voir mon carnet</button>'
    +'</div>';
 }
 
@@ -333,7 +468,16 @@ function viewSeance(){
      +'<div style="font-size:14px;color:var(--muted);margin-top:10px">'+esc(step.reps)+'</div>';
   }
 
-  return '<div class="top"><div>'
+  const repbar=(!rest&&!step.timed)
+   ?'<div class="repbar"><span class="replbl">Reps</span>'
+    +'<button class="step" id="repminus">−</button>'
+    +'<span class="repval">'+pendingReps+'</span>'
+    +'<button class="step" id="repplus">+</button></div>'
+   :'';
+
+  return '<div class="top">'
+   +'<button class="pill stopbtn'+(stopArmed?' armed':'')+'" id="backTop">'+(stopArmed?'✕':'‹')+'</button>'
+   +'<div style="flex:1;text-align:center;overflow:hidden">'
    +'<div class="kicker" style="font-size:10px">'+esc(step.position)+'</div>'
    +'<div class="num" id="tot" style="font-size:12px;color:#4A5468;font-weight:400;margin-top:2px">Séance : 0:00</div></div>'
    +'<button class="pill" id="pp">'+(running?"❙❙":"▶")+'</button></div>'
@@ -351,6 +495,7 @@ function viewSeance(){
    +'<div class="exdet">'+esc(step.detail)+'</div>'
    +(lien?'<a class="btn demo" href="'+esc(lien)+'" target="_blank" rel="noopener">▶  Voir la démonstration</a>'
         :'<button class="ghost" id="toReg" style="width:auto;font-size:12px;color:#4A5468;margin-top:12px">+ Ajouter un lien pour cet exercice</button>')
+   +repbar
    +'</div>'
    +'<div class="actions">'
    +(rest
@@ -358,7 +503,7 @@ function viewSeance(){
      :'<button class="dark" id="skip" style="flex:0 0 72px;font-size:20px">›</button>'
       +'<button id="done" style="background:'+col+';color:#fff">✓  Série terminée</button>')
    +'</div>'
-   +'<button class="stop'+(stopArmed?' armed':'')+'" id="stop">'
+   +'<button class="stop stopbtn'+(stopArmed?' armed':'')+'" id="stopBottom">'
    +(stopArmed?"Appuie encore pour confirmer l'arrêt":"Arrêter la séance")+'</button>';
 }
 
@@ -376,38 +521,81 @@ function bind(){
     seq=buildSequence();idx=0;phase="work";running=true;
     stepBase=0;stepAnchor=Date.now();elapsed=0;
     totBase=0;totAnchor=Date.now();total=0;
+    sessionLog={};initPending(seq[0]);
     screen="seance";requestWake();render();
   });
   on("toReg",()=>{screen="reglages";render();});
+  on("toCarnet",()=>{screen="carnet";render();});
   on("back",()=>{screen="accueil";render();});
   on("snd",()=>{S.sound=!S.sound;save();render();});
   on("home",()=>{S.sessionCount++;save();screen="accueil";render();});
 
   document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>{
-    const id=b.dataset.minus, all=BLOC_A.concat(BLOC_B,FIN_COMMUN,FIN_IMPAIRE,FIN_PAIRE);
-    const cur=S.restOverrides[id]!==undefined?S.restOverrides[id]:all.find(x=>x.id===id).rest;
+    const id=b.dataset.minus;
+    const cur=S.restOverrides[id]!==undefined?S.restOverrides[id]:ALL_EXOS.find(x=>x.id===id).rest;
     S.restOverrides[id]=Math.max(0,cur-15);save();render();});
   document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{
-    const id=b.dataset.plus, all=BLOC_A.concat(BLOC_B,FIN_COMMUN,FIN_IMPAIRE,FIN_PAIRE);
-    const cur=S.restOverrides[id]!==undefined?S.restOverrides[id]:all.find(x=>x.id===id).rest;
+    const id=b.dataset.plus;
+    const cur=S.restOverrides[id]!==undefined?S.restOverrides[id]:ALL_EXOS.find(x=>x.id===id).rest;
     S.restOverrides[id]=cur+15;save();render();});
   document.querySelectorAll("[data-link]").forEach(i=>i.oninput=e=>{
     S.customLinks[i.dataset.link]=e.target.value;save();});
+
+  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{
+    carnetTab=b.dataset.tab;render();});
+  document.querySelectorAll("[data-niv-variante]").forEach(i=>i.oninput=e=>{
+    const id=i.dataset.nivVariante;
+    NIVEAUX[id]=Object.assign({},NIVEAUX[id],{variante:e.target.value,date:new Date().toISOString()});
+    saveNiveaux();});
+  document.querySelectorAll("[data-niv-note]").forEach(i=>i.oninput=e=>{
+    const id=i.dataset.nivNote;
+    NIVEAUX[id]=Object.assign({},NIVEAUX[id],{note:e.target.value});
+    saveNiveaux();});
+  document.querySelectorAll("[data-delsession]").forEach(b=>b.onclick=()=>{
+    const di=+b.dataset.delsession;
+    if(deleteArmed===di){LOG.sessions.splice(di,1);saveLog();deleteArmed=null;render();}
+    else{deleteArmed=di;render();setTimeout(()=>{if(deleteArmed===di){deleteArmed=null;render();}},2500);}
+  });
+  document.querySelectorAll("[data-editset]").forEach(b=>b.onclick=()=>{
+    const parts=b.dataset.editset.split("|");
+    const session=LOG.sessions[+parts[0]];
+    if(!session)return;
+    const cur=session.reps[parts[1]][+parts[2]];
+    const val=prompt("Nouveau nombre de reps :",cur);
+    if(val===null)return;
+    const n=parseInt(val,10);
+    if(!isNaN(n)&&n>=0){session.reps[parts[1]][+parts[2]]=n;saveLog();render();}
+  });
 
   on("pp",()=>{
     if(running){stepBase+=(Date.now()-stepAnchor)/1000;totBase+=(Date.now()-totAnchor)/1000;}
     else{stepAnchor=Date.now();totAnchor=Date.now();}
     running=!running;render();});
   on("done",()=>{
-    const step=seq[idx];beep(true);
+    const step=seq[idx];
+    if(!step.timed){
+      if(!sessionLog[step.id])sessionLog[step.id]=[];
+      sessionLog[step.id].push(pendingReps);
+    }
+    beep(true);
     if(step.rest>0){phase="rest";resetStep();}else{next();}
     render();});
   on("skip",()=>{next();render();});
   on("skiprest",()=>{next();render();});
   on("add30",()=>{stepBase-=30;elapsed-=30;paintClock();});
-  on("stop",()=>{
-    if(stopArmed){stopArmed=false;releaseWake();screen="accueil";render();}
-    else{stopArmed=true;render();setTimeout(()=>{if(stopArmed){stopArmed=false;if(screen==="seance")render();}},3000);}
+  on("repminus",()=>{if(pendingReps>0)pendingReps--;render();});
+  on("repplus",()=>{pendingReps++;render();});
+
+  document.querySelectorAll(".stopbtn").forEach(b=>b.onclick=()=>{
+    if(stopArmed){
+      stopArmed=false;
+      saveSessionToJournal(true);
+      releaseWake();
+      screen="accueil";render();
+    }else{
+      stopArmed=true;render();
+      setTimeout(()=>{if(stopArmed){stopArmed=false;if(screen==="seance")render();}},3000);
+    }
   });
 }
 
@@ -427,6 +615,7 @@ render();
 if("serviceWorker" in navigator){
   window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 }
+
 </script>
 </body>
 </html>
