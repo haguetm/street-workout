@@ -83,6 +83,14 @@
     color:var(--txt);border-left:1px solid var(--sep);border-right:1px solid var(--sep);
     align-self:stretch;display:flex;align-items:center;justify-content:center}
 
+  .frow{display:flex;align-items:center;gap:12px;width:100%;margin-top:11px;
+    padding-top:10px;border-top:1px solid var(--sep)}
+  .flbl{font-size:13px;color:var(--ter);flex:0 0 auto;min-width:52px}
+  .finput{flex:1;min-width:0;background:none;border:0;border-radius:0;padding:2px 0;
+    font-size:14px;color:var(--sec);font-family:inherit;outline:0;letter-spacing:-.01em}
+  .finput::placeholder{color:var(--ter);opacity:.7}
+  .finput:focus{box-shadow:none;color:var(--txt)}
+
   /* écran séance */
   .nav{padding:14px 16px 8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
   .navbtn{width:40px;height:40px;border-radius:50%;background:var(--surface);color:var(--sec);
@@ -439,8 +447,9 @@ function cellReglage(ex){
    +'<span class="stepper"><button data-minus="'+ex.id+'">−</button>'
    +'<span class="sv">'+v+' s</span>'
    +'<button data-plus="'+ex.id+'">+</button></span></div>'
-   +(ex.custom?'<input class="inline" type="url" inputmode="url" data-link="'+ex.id+'" value="'
-     +esc(S.customLinks[ex.id]||"")+'" placeholder="Lien vidéo pour cet exercice" style="width:100%;margin-top:10px">':'')
+   +(ex.custom?'<div class="frow"><span class="flbl">Lien</span>'
+     +'<input class="finput" type="url" inputmode="url" data-link="'+ex.id+'" value="'
+     +esc(S.customLinks[ex.id]||"")+'" placeholder="Coller l\'URL de la vidéo"></div>':'')
    +'</div>';
 }
 
@@ -472,10 +481,12 @@ function viewCarnet(){
          +'<span class="title">'+esc(ex.nom)+'</span>'
          +(n.date?'<span style="font-size:12px;color:var(--ter)">'+esc(formatDate(n.date))+'</span>':'')
          +'</div>'
-         +'<input class="inline" data-niv-variante="'+ex.id+'" value="'
-         +esc(n.variante||"")+'" placeholder="Variante ou charge actuelle" style="width:100%;margin-top:6px">'
-         +'<input class="inline" data-niv-note="'+ex.id+'" value="'+esc(n.note||"")
-         +'" placeholder="Note" style="width:100%">'
+         +'<div class="frow"><span class="flbl">Niveau</span>'
+         +'<input class="finput" data-niv-variante="'+ex.id+'" value="'
+         +esc(n.variante||"")+'" placeholder="Variante ou charge actuelle"></div>'
+         +'<div class="frow"><span class="flbl">Note</span>'
+         +'<input class="finput" data-niv-note="'+ex.id+'" value="'+esc(n.note||"")
+         +'" placeholder="Optionnel"></div>'
          +'</div>';
       }).join("")+'</div>'
     ).join("");
