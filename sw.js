@@ -1,7 +1,7 @@
-const CACHE = "seance-v3";
+const CACHE = "seance-v4";
 const FILES = [
   "./", "./index.html", "./manifest.webmanifest",
-  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"
+  "./icon-192.png", "./icon-512.png", "./icon-maskable.png", "./apple-touch-icon.png"
 ];
 
 self.addEventListener("install", (e) => {
