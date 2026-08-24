@@ -113,6 +113,8 @@
   .under{font-size:13px;color:var(--sec);margin-top:8px;letter-spacing:-.01em}
   .exname{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.12;text-align:center;margin-top:20px}
   .exsub{font-size:13.5px;color:var(--sec);text-align:center;margin-top:4px;letter-spacing:-.01em}
+  .matline{font-size:12px;color:var(--ter);text-align:center;margin-top:7px;
+    letter-spacing:.01em;padding:3px 12px;background:var(--surface);border-radius:8px}
   .exdet{font-size:13.5px;color:var(--sec);text-align:center;line-height:1.55;margin-top:12px;max-width:360px}
   .demo{margin-top:16px;background:var(--surface);color:var(--txt);font-size:14px;font-weight:500;
     padding:10px 16px;border-radius:20px;letter-spacing:-.01em}
@@ -222,6 +224,32 @@ const FIN_PAIRE=[
 
 const ALL_EXOS = BLOC_A.concat(BLOC_B,FIN_COMMUN,FIN_IMPAIRE,FIN_PAIRE);
 const SECTIONS=[["Bloc A",BLOC_A],["Bloc B",BLOC_B],["Finition",FIN_COMMUN.concat(FIN_IMPAIRE,FIN_PAIRE)]];
+
+// Matériel : par exercice (affiché pendant la séance) puis regroupé par équipement
+const MAT={
+ tractions:"Barre de traction + élastique",
+ dips:"Barres parallèles ou anneaux",
+ squat:"Un haltère",
+ releves:"Tapis",
+ australiennes:"Barre basse, table ou anneaux",
+ pompes:"Tapis (optionnel)",
+ fentes:"Banc ou chaise",
+ gainage:"Tapis",
+ superman:"Tapis",
+ elevations:"Haltères légers",
+ facepulls:"Élastique",
+ militaire:"Haltères",
+ triceps:"Un haltère",
+ curl:"Haltères"};
+
+const MATERIEL=[
+ {nom:"Barre de traction",detail:"Encadrement de porte, murale ou parc extérieur",exos:["tractions"]},
+ {nom:"Barres parallèles ou anneaux",detail:"À défaut : deux chaises solides dos à dos",exos:["dips"]},
+ {nom:"Barre basse ou anneaux",detail:"À défaut : le bord d'une table stable",exos:["australiennes"]},
+ {nom:"Haltères",detail:"Une paire réglable couvre tout le programme",exos:["squat","elevations","militaire","triceps","curl","fentes"]},
+ {nom:"Élastiques",detail:"Assistance aux tractions et résistance aux face pulls",exos:["tractions","facepulls"]},
+ {nom:"Banc ou chaise",detail:"Pour poser le pied arrière",exos:["fentes"]},
+ {nom:"Tapis",detail:"Confort au sol",exos:["releves","gainage","superman","pompes"]}];
 const REST_TOUR=120;
 const COL={A:"#FF375F",B:"#30D158",F:"#FF9F0A"};
 
@@ -389,6 +417,7 @@ function render(){
   if(screen==="accueil")app.innerHTML=viewAccueil();
   else if(screen==="reglages")app.innerHTML=viewReglages();
   else if(screen==="carnet")app.innerHTML=viewCarnet();
+  else if(screen==="materiel")app.innerHTML=viewMateriel();
   else if(screen==="fin")app.innerHTML=viewFin();
   else app.innerHTML=viewSeance();
   bind();
@@ -433,6 +462,8 @@ function viewAccueil(){
    +'<div class="group" style="margin-top:12px">'
    +'<button class="cell" id="toReg"><div class="grow"><div class="title">Réglages</div>'
    +'<div class="caption">Temps de repos et liens vidéo</div></div><span class="chev">›</span></button>'
+   +'<button class="cell" id="toMat"><div class="grow"><div class="title">Matériel</div>'
+   +'<div class="caption">Ce qu\'il te faut pour la séance</div></div><span class="chev">›</span></button>'
    +'<button class="cell" id="toCarnet"><div class="grow"><div class="title">Carnet</div>'
    +'<div class="caption">Historique et niveaux</div></div><span class="chev">›</span></button>'
    +'</div>'
@@ -541,6 +572,26 @@ function viewCarnet(){
    +'</div>'+sheet;
 }
 
+function viewMateriel(){
+  const nomExo=id=>{const e=ALL_EXOS.find(x=>x.id===id);return e?e.nom:id;};
+  return '<div class="pad">'
+   +'<button class="backline" id="back">‹ Retour</button>'
+   +'<h2>Matériel</h2>'
+   +'<p class="sub">Tout le programme tient avec une barre de traction, une paire d\'haltères et des élastiques.</p>'
+   +'<div class="group" style="margin-top:20px">'
+   +MATERIEL.map(m=>
+     '<div class="cell"><div class="grow">'
+     +'<div class="title">'+esc(m.nom)+'</div>'
+     +'<div class="caption">'+esc(m.detail)+'</div>'
+     +'<div class="caption" style="color:var(--ter);margin-top:5px">'
+     +esc(m.exos.map(nomExo).join(" · "))+'</div>'
+     +'</div></div>').join("")
+   +'</div>'
+   +'<p class="hint">Les parcs de street workout (Auriol, Ceyreste, Prado) couvrent barre, dips et australiennes. '
+   +'Les haltères et élastiques restent à avoir chez toi pour la finition.</p>'
+   +'</div>';
+}
+
 function viewFin(){
   const exList=Object.keys(sessionLog);
   const recap=exList.map(id=>{
@@ -608,6 +659,7 @@ function viewSeance(){
    +'<div class="ringtxt'+(running?'':' pulse')+'">'+inner+'</div></div>'
    +'<div class="exname">'+esc(step.nom)+'</div>'
    +'<div class="exsub">'+esc(step.sub)+'</div>'
+   +(MAT[step.id]?'<div class="matline">'+esc(MAT[step.id])+'</div>':'')
    +'<div class="exdet">'+esc(step.detail)+'</div>'
    +(lien?'<a class="btn demo" href="'+esc(lien)+'" target="_blank" rel="noopener"><b>▶</b> Démonstration</a>'
         :'<button class="plain" id="toReg" style="font-size:13px;color:var(--ter);margin-top:8px">Ajouter un lien pour cet exercice</button>')
@@ -643,6 +695,7 @@ function bind(){
   });
   on("toReg",()=>{screen="reglages";render();});
   on("toCarnet",()=>{screen="carnet";render();});
+  on("toMat",()=>{screen="materiel";render();});
   on("back",()=>{screen="accueil";editTarget=null;render();});
   on("snd",()=>{S.sound=!S.sound;save();render();});
   on("home",()=>{S.sessionCount++;save();screen="accueil";render();});
