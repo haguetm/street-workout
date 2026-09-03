@@ -186,25 +186,23 @@
 // Timestamps de la vidéo Eric Flag "La SEULE Vidéo Pour Commencer le Street Workout"
 const BLOC_A=[
  {id:"tractions",nom:"Tractions",sub:"pronation ou supination",reps:"6 à 10 reps",
-  detail:"Bras tendus en bas, initie le mouvement avec les omoplates, menton au-dessus de la barre. Corps gainé, jambes serrées non croisées.",rest:75,ts:64},
+  detail:"Bras tendus en bas, initie le mouvement avec les omoplates, menton au-dessus de la barre. Corps gainé, jambes serrées non croisées.",rest:90,ts:64},
  {id:"dips",nom:"Dips",sub:"barres parallèles ou tréteaux",reps:"8 à 12 reps",
-  detail:"Épaules poussées vers le bas, coudes le long du corps. Descends au moins jusqu'à l'angle droit au coude.",rest:75,ts:192},
+  detail:"Épaules poussées vers le bas, coudes le long du corps. Descends au moins jusqu'à l'angle droit au coude.",rest:90,ts:192},
  {id:"squat",nom:"Squat gobelet",sub:"un haltère contre la poitrine",reps:"12 à 15 reps",
-  detail:"Genoux dans l'axe des pieds, dos droit, talons au sol. Descends aussi bas que ta mobilité le permet.",rest:50,ts:272},
+  detail:"Genoux dans l'axe des pieds, dos droit, talons au sol. Descends aussi bas que ta mobilité le permet.",rest:60,ts:272},
  {id:"releves",nom:"Relevés de jambes",sub:"au sol ou suspendu",reps:"10 à 15 reps",
-  detail:"Bas du dos plaqué, bassin en rétroversion. Aucun balancier, descente contrôlée.",rest:50,ts:331}];
+  detail:"Bas du dos plaqué, bassin en rétroversion. Aucun balancier, descente contrôlée.",rest:60,ts:331}];
 
 const BLOC_B=[
  {id:"australiennes",nom:"Tractions australiennes",sub:"barre basse, table ou anneaux",reps:"8 à 12 reps",
-  detail:"Omoplates vers l'arrière et vers le bas, va chercher le haut des pecs avec la barre. Corps droit et gainé.",rest:50,ts:374},
+  detail:"Omoplates vers l'arrière et vers le bas, va chercher le haut des pecs avec la barre. Corps droit et gainé.",rest:90,ts:374},
  {id:"pompes",nom:"Pompes",sub:"classiques ou pieds surélevés",reps:"10 à 15 reps",
-  detail:"Coudes le long du corps, pecs qui frôlent le sol, épaules poussées vers l'avant en position haute.",rest:50,ts:412},
+  detail:"Coudes le long du corps, pecs qui frôlent le sol, épaules poussées vers l'avant en position haute.",rest:90,ts:412},
  {id:"fentes",nom:"Fentes bulgares",sub:"pied arrière sur une chaise",reps:"10 reps par jambe",
   detail:"Commence par ton côté faible. Genou avant dans l'axe, buste droit. Charge aux haltères dès que 12 reps passent facile.",rest:60,custom:true},
- {id:"gainage",nom:"Gainage planche",sub:"enchaîné avec le superman",timed:40,
-  detail:"Fessiers serrés, bassin en rétroversion, aucun creux lombaire. Enchaîne directement sur le superman sans repos.",rest:0,ts:534},
- {id:"superman",nom:"Superman",sub:"juste après le gainage",timed:40,
-  detail:"Décolle bras et jambes, regard vers le sol. Travaille toute la chaîne postérieure.",rest:50,ts:534}];
+ {id:"hollow",nom:"Hollow body",sub:"gainage banane au sol",timed:40,
+  detail:"Bas du dos plaqué au sol, bras tendus derrière la tête, jambes tendues légèrement décollées. Contracte comme pour t'enrouler, aucune cambrure lombaire.",rest:60,custom:true}];
 
 const FIN_COMMUN=[
  {id:"elevations",nom:"Élévations latérales",sub:"élastique ou haltères légers",reps:"15 à 20 reps",series:3,
@@ -234,8 +232,7 @@ const MAT={
  australiennes:"Barre basse, table ou anneaux",
  pompes:"Tapis (optionnel)",
  fentes:"Banc ou chaise",
- gainage:"Tapis",
- superman:"Tapis",
+ hollow:"Tapis (optionnel)",
  elevations:"Haltères légers",
  facepulls:"Élastique",
  militaire:"Haltères",
@@ -249,7 +246,7 @@ const MATERIEL=[
  {nom:"Haltères",detail:"Une paire réglable couvre tout le programme",exos:["squat","elevations","militaire","triceps","curl","fentes"]},
  {nom:"Élastiques",detail:"Assistance aux tractions et résistance aux face pulls",exos:["tractions","facepulls"]},
  {nom:"Banc ou chaise",detail:"Pour poser le pied arrière",exos:["fentes"]},
- {nom:"Tapis",detail:"Confort au sol",exos:["releves","gainage","superman","pompes"]}];
+ {nom:"Tapis",detail:"Confort au sol",exos:["releves","hollow","pompes"]}];
 const REST_TOUR=120;
 const COL={A:"#FF375F",B:"#30D158",F:"#FF9F0A"};
 
@@ -334,19 +331,24 @@ function beep(single){
 
 function buildSequence(){
   const steps=[], impaire=S.sessionCount%2===1;
+  const bloc=impaire?"A":"B";
+  const list=impaire?BLOC_A:BLOC_B;
+  const pairs=[[list[0],list[1]],[list[2],list[3]]]; // paire 1 : agoniste/antagoniste haut du corps · paire 2 : bas du corps/core
   const r=ex=>S.restOverrides[ex.id]!==undefined?S.restOverrides[ex.id]:ex.rest;
-  for(let t=1;t<=S.tours;t++){
-    [["A",BLOC_A],["B",BLOC_B]].forEach(([bloc,list],bi)=>{
-      list.forEach((ex,i)=>{
-        const dernier=i===list.length-1;
-        const finTout=dernier&&bi===1&&t===S.tours;
+  pairs.forEach(([exA,exB],pi)=>{
+    const lastPair=pi===pairs.length-1;
+    for(let t=1;t<=S.tours;t++){
+      const lastRound=t===S.tours;
+      [exA,exB].forEach((ex,ei)=>{
+        const lastOfPair=lastRound&&ei===1;
+        const finTout=lastOfPair&&lastPair;
         steps.push(Object.assign({},ex,{bloc:bloc,
-          position:"Tour "+t+"/"+S.tours+" · Bloc "+bloc+" · "+(i+1)+"/"+list.length,
-          rest:dernier&&!finTout?REST_TOUR:(finTout?90:r(ex)),
-          restLabel:dernier&&!finTout?"Repos entre les blocs":"Repos"}));
+          position:"Paire "+(pi+1)+"/2 · Tour "+t+"/"+S.tours+" · "+(ei+1)+"/2",
+          rest:lastOfPair?(finTout?90:REST_TOUR):r(ex),
+          restLabel:lastOfPair&&!finTout?"Repos avant la paire suivante":"Repos"}));
       });
-    });
-  }
+    }
+  });
   const fin=FIN_COMMUN.concat(impaire?FIN_IMPAIRE:FIN_PAIRE);
   fin.forEach((ex,ei)=>{
     for(let s=1;s<=ex.series;s++){
@@ -404,6 +406,7 @@ function paintClock(){
 function next(){
   if(idx+1>=seq.length){
     saveSessionToJournal(false);
+    S.sessionCount++;save();
     screen="fin";
     return;
   }
@@ -427,30 +430,33 @@ function render(){
 function finitionLabel(n){
   return n%2===1?"Développé militaire + triceps":"Curl marteau";
 }
+function blocLabel(n){
+  return n%2===1?"Bloc A · vertical":"Bloc B · horizontal";
+}
 
 function viewAccueil(){
   const cur=S.sessionCount;
-  const nb=S.tours*(BLOC_A.length+BLOC_B.length)+(FIN_COMMUN.length+(cur%2===1?2:1))*3;
+  const nb=S.tours*4+(FIN_COMMUN.length+(cur%2===1?2:1))*3;
   return '<div class="pad">'
    +'<div style="margin-top:8px"><h1>La Séance</h1>'
-   +'<p class="sub">Blocs A et B en alternance, puis la finition.</p></div>'
+   +'<p class="sub">Bloc A (vertical) ou B (horizontal) en alternance, format superset.</p></div>'
 
    +'<div class="sect">À venir</div>'
    +'<div class="group">'
    +'<div class="cell"><span class="dot" style="background:var(--f)"></span>'
    +'<div class="grow"><div class="title">Séance '+cur+'</div>'
-   +'<div class="caption">Blocs A + B · '+finitionLabel(cur)+'</div></div>'
+   +'<div class="caption">'+blocLabel(cur)+' · '+finitionLabel(cur)+'</div></div>'
    +'<span class="tag">Prochaine</span></div>'
    +'<div class="cell"><span class="dot" style="background:var(--f);opacity:.35"></span>'
    +'<div class="grow"><div class="title" style="color:var(--sec)">Séance '+(cur+1)+'</div>'
-   +'<div class="caption">Blocs A + B · '+finitionLabel(cur+1)+'</div></div></div>'
+   +'<div class="caption">'+blocLabel(cur+1)+' · '+finitionLabel(cur+1)+'</div></div></div>'
    +'</div>'
 
    +'<div class="sect">Nombre de tours</div>'
    +'<div class="seg">'
    +[1,2,3,4].map(n=>'<button class="segitem'+(S.tours===n?' on':'')+'" data-tour="'+n+'">'+n+'</button>').join("")
    +'</div>'
-   +'<p class="hint">'+S.tours+' tour'+(S.tours>1?'s':'')+' de chaque bloc, soit '+nb
+   +'<p class="hint">'+S.tours+' tour'+(S.tours>1?'s':'')+' de chaque paire (superset agoniste/antagoniste), soit '+nb
    +' passages. Première séance après une pause : reste à 1.</p>'
 
    +'<div class="sect">Vidéo de référence</div>'
@@ -604,7 +610,7 @@ function viewFin(){
    +'<div class="phase" style="color:var(--b)">Séance terminée</div>'
    +'<div class="num" style="font-size:60px;margin:8px 0 4px">'+fmt(total)+'</div>'
    +'<p class="sub" style="margin-bottom:26px">'+seq.length+' passages · '+S.tours+' tour'
-   +(S.tours>1?'s':'')+' de chaque bloc</p>'
+   +(S.tours>1?'s':'')+' de chaque paire</p>'
    +(recap?'<div class="group" style="text-align:left;margin-bottom:14px">'+recap+'</div>':'')
    +'<p class="hint" style="text-align:left;margin-bottom:26px">Enregistrée dans ton carnet. '
    +'À la prochaine séance : bats au moins un chiffre.</p>'
@@ -698,7 +704,7 @@ function bind(){
   on("toMat",()=>{screen="materiel";render();});
   on("back",()=>{screen="accueil";editTarget=null;render();});
   on("snd",()=>{S.sound=!S.sound;save();render();});
-  on("home",()=>{S.sessionCount++;save();screen="accueil";render();});
+  on("home",()=>{screen="accueil";render();});
 
   document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>{
     const id=b.dataset.minus;
